@@ -5,22 +5,20 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 8000;
 
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-// MongoDB connection
-mongoose.connect(process.env.MONGO_URI, {
-  dbName: 'appointmentdb'
+// ✅ MONGO_URL instead of MONGO_URI (Fix for Render)
+mongoose.connect(process.env.MONGO_URL, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  dbName: 'appointmentdb',
 });
 
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'Connection error'));
-db.once('open', () => console.log('Connection done'));
-
-// Root route
-app.get('/', (req, res) => {
-  res.send('Backend is running successfully!');
-});
+db.once('open', () => console.log('MongoDB connected successfully'));
 
 // Schemas & Models
 const contactSchema = mongoose.Schema({
@@ -50,13 +48,13 @@ const blogSchema = mongoose.Schema({
   description: String,
   pic: String,
   poston: String,
-  postby: String
+  postby: String,
 });
 const Blog = mongoose.model('Blog', blogSchema);
 
 // Routes
 
-// Contact form
+// Contact Form
 app.post('/api/insertcontact', async (req, res) => {
   console.log(req.body);
   try {
@@ -69,46 +67,45 @@ app.post('/api/insertcontact', async (req, res) => {
   }
 });
 
-// Registration form
+// Registration Form
 app.post('/api/insertregister', async (req, res) => {
   console.log(req.body);
   try {
     const register = new Register(req.body);
     await register.save();
-    res.json({ success: true, message: 'Form submitted successfully' });
+    res.json({ success: true, message: 'Registration successful' });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: 'Error in submission' });
   }
 });
 
-// Login form
+// Login Form
 app.post('/api/insertlogin', async (req, res) => {
   console.log(req.body);
   try {
     const login = new Login(req.body);
     await login.save();
-    res.json({ success: true, message: 'Form submitted successfully' });
+    res.json({ success: true, message: 'Login data stored' });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: 'Error in submission' });
   }
 });
 
-// Blog insert
+// Blogs
 app.post('/api/insertblog', async (req, res) => {
   console.log(req.body);
   try {
     const blog = new Blog(req.body);
     await blog.save();
-    res.json({ success: true, message: 'Form submitted successfully' });
+    res.json({ success: true, message: 'Blog added' });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: 'Error in submission' });
   }
 });
 
-// Blog by ID
 app.post('/viewblogbyid', async (req, res) => {
   try {
     const data = await Blog.find({ _id: req.body.id });
@@ -116,23 +113,21 @@ app.post('/viewblogbyid', async (req, res) => {
     console.log(data);
   } catch (error) {
     console.log(error);
-    res.json({ success: false, message: 'Error fetching blog' });
+    res.status(500).json({ error: 'Error retrieving blog' });
   }
 });
 
-// Delete blog by ID
 app.post('/api/deleteblogbyid', async (req, res) => {
-  console.log(req.body);
   try {
     const data = await Blog.deleteOne({ _id: req.body.id });
     res.json(data);
   } catch (error) {
     console.log(error);
-    res.json({ success: false, message: 'Error in deletion' });
+    res.json({ success: false, message: 'Error deleting blog' });
   }
 });
 
-// View data
+// View APIs
 app.get('/viewenquiries', async (req, res) => {
   const data = await Contact.find();
   res.json(data);
@@ -148,7 +143,7 @@ app.get('/viewblogs', async (req, res) => {
   res.json(data);
 });
 
-// Start server
+// Start Server
 app.listen(PORT, () => {
-  console.log(`Server is running on ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
